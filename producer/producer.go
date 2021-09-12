@@ -8,6 +8,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	SingleTopic   = "single_consumer_topic"
+	MultipleTopic = "multiple_consumer_topic"
+)
+
 func main() {
 	BROKERS := []string{"localhost:9001"}
 
@@ -16,11 +21,10 @@ func main() {
 		Short: "publish message to kafka for single consumer",
 		Run: func(cmd *cobra.Command, args []string) {
 			prod := NewKafkaProducer(BROKERS)
-			topic := "single_consumer_topic"
 			message := make(map[string]interface{})
 			message["first_key"] = "hello"
 			message["second_key"] = "single consumer"
-			if err := prod.Publish(topic, message); err != nil {
+			if err := prod.Publish(SingleTopic, message); err != nil {
 				log.Error("Error Publishing Message: %s", err)
 			} else {
 				log.Info("Success Publishing Message")
@@ -32,11 +36,10 @@ func main() {
 		Short: "publish message to kafka for multiple consumer",
 		Run: func(cmd *cobra.Command, args []string) {
 			prod := NewKafkaProducer(BROKERS)
-			topic := "multiple_consumer_topic"
 			message := make(map[string]interface{})
 			message["first_key"] = "hello"
 			message["second_key"] = "multiple consumer"
-			if err := prod.Publish(topic, message); err != nil {
+			if err := prod.Publish(MultipleTopic, message); err != nil {
 				log.Error("Error Publishing Message: %s", err)
 			} else {
 				log.Info("Success Publishing Message")
