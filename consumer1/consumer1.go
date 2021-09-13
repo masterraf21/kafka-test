@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -19,6 +21,16 @@ const (
 )
 
 func main() {
+	BROKERS := []string{"localhost:9001"}
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		consumer := NewKafkaConsumer(BROKERS)
+		consumer.Consume()
+	}()
+
+	wg.Wait()
 }
 
 type (
@@ -40,7 +52,7 @@ func NewKafkaConsumer(brokers []string) KafkaConsumer {
 	cfg.Consumer.Offsets.Initial = sarama.OffsetOldest
 	consumer, err := sarama.NewConsumerGroup(brokers, GROUP, cfg)
 	if err != nil {
-		log.Fatal("Error Creating Kafk Consumer: %s", err)
+		log.Fatal("Error Creating Kafka Consumer: %s", err)
 	}
 	return KafkaConsumer{
 		consumer: consumer,
@@ -66,8 +78,8 @@ func (c *KafkaConsumer) Consume() {
 	go func() {
 		defer wg.Done()
 		for {
-			if err := c.consumer.Consume(ctx, topics, handler); err != nil {
-				log.Panicf("Error from consumer: %v", error)
+			if err := c.consumer.Consume(ctx, topics, &handler); err != nil {
+				log.Panicf("Error from consumer: %v", err)
 			}
 			if ctx.Err() != nil {
 				return
@@ -101,5 +113,36 @@ func (h *ConsumerHandler) Cleanup(sarama.ConsumerGroupSession) error {
 	return nil
 }
 
-func (h *ConsumerHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+func (h *ConsumerHandler) ConsumeClaim(
+	session sarama.ConsumerGroupSession,
+	claim sarama.ConsumerGroupClaim,
+) error {
+	for message := range claim.Messages() {
+		var err error
+		var payload map[string]interface{}
+
+		err = json.Unmarshal(message.Value, &payload)
+		if err != nil {
+			log.Printf("Error unmarshaling Kafka message: %s", err)
+			return err
+		}
+
+		fmt.Println("Message: ")
+		prettyPrint(payload)
+
+		// log.Printf("Message claimed: value = %s, timestamp = %v topic = %s", message.Value, message.Timestamp, message.Topic)
+		session.MarkMessage(message, "")
+
+	}
+
+	return nil
+}
+
+func prettyPrint(raw interface{}) {
+	json, err := json.MarshalIndent(raw, "", "  ")
+	if err != nil {
+		log.Error("erorr unmarshaling")
+		return
+	}
+	fmt.Println(string(json))
 }
