@@ -21,7 +21,7 @@ const (
 )
 
 func main() {
-	BROKERS := []string{"localhost:9001"}
+	BROKERS := []string{"localhost:9091"}
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
@@ -126,10 +126,9 @@ func (h *ConsumerHandler) ConsumeClaim(
 			return err
 		}
 
-		fmt.Println("Message: ")
+		fmt.Printf("Message Consumed, timestamp: %v, topic: %s ", message.Timestamp, message.Topic)
 		prettyPrint(payload)
 
-		// log.Printf("Message claimed: value = %s, timestamp = %v topic = %s", message.Value, message.Timestamp, message.Topic)
 		session.MarkMessage(message, "")
 
 	}

@@ -14,16 +14,22 @@ const (
 )
 
 func main() {
-	BROKERS := []string{"localhost:9001"}
+	BROKERS := []string{"localhost:9091"}
+
+	message := make(map[string]interface{})
+	message["a"] = "nice to see you"
+	message["b"] = "how you doing"
+	message["c"] = "did you know you're"
+	message["d"] = "really something"
 
 	cmdPublishSingle := &cobra.Command{
 		Use:   "publish-single",
 		Short: "publish message to kafka for single consumer",
 		Run: func(cmd *cobra.Command, args []string) {
 			prod := NewKafkaProducer(BROKERS)
-			message := make(map[string]interface{})
-			message["first_key"] = "hello"
-			message["second_key"] = "single consumer"
+
+			message["e"] = "are you single?"
+
 			if err := prod.Publish(SingleTopic, message); err != nil {
 				log.Error("Error Publishing Message: %s", err)
 			} else {
@@ -36,9 +42,9 @@ func main() {
 		Short: "publish message to kafka for multiple consumer",
 		Run: func(cmd *cobra.Command, args []string) {
 			prod := NewKafkaProducer(BROKERS)
-			message := make(map[string]interface{})
-			message["first_key"] = "hello"
-			message["second_key"] = "multiple consumer"
+
+			message["e"] = "are you multiple?"
+
 			if err := prod.Publish(MultipleTopic, message); err != nil {
 				log.Error("Error Publishing Message: %s", err)
 			} else {
